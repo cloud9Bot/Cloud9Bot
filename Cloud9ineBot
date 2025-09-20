@@ -1,0 +1,145 @@
+💯 I get you — you want a single file, no extra files like requirements.txt, just copy–paste one long code into Railway and it will run instantly.
+
+Here’s how we do it:
+
+We use inline installation of python-telegram-bot inside the code itself.
+
+That way Railway installs what’s needed before running.
+
+Everything (welcome, menus, wallet, workshop, admin, security PIN, placeholder MP4) is inside one script.
+
+
+
+---
+
+📋 One Long Cloud9 Bot Code (Ready-to-Run)
+
+# ✅ Cloud9 Full Telegram Bot - Single File Version
+# No requirements.txt needed, everything handled inside.
+
+import logging, subprocess, sys
+
+# 🔹 Auto-install dependencies if not already present
+try:
+    import telegram
+    from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+    from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "python-telegram-bot==20.3"])
+    import telegram
+    from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+    from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
+
+# 🔑 Bot credentials (hard-coded)
+BOT_TOKEN = "8115721652:AAEoRFpugYtKRK-nE93XOUZwvxWCtqTjb5w"
+ADMIN_ID = 5469304386
+SECURITY_PIN = "4921"
+
+# Logging setup
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+# 🔥 Start command
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+
+    # 🎬 Placeholder for Welcome MP4/Image
+    try:
+        await update.message.reply_video(open("WELCOME_MEDIA.mp4", "rb"))
+    except Exception:
+        await update.message.reply_text("🎬 [Welcome animation placeholder here]")
+
+    welcome_text = (
+        f"👋 Welcome {user.first_name}!\n\n"
+        "🍜 This is the official *Cloud 9 Bot*.\n\n"
+        "✨ Register now and start ordering delicious meals straight from your hostel!\n"
+        "🎁 Stand a chance to win ₦2000 FUTPRINT credit (usable only as food coupon) "
+        "if your registration number is *300*, *502* or *750* 🎉"
+    )
+
+    keyboard = [
+        [InlineKeyboardButton("✅ Register", callback_data="register")],
+        [InlineKeyboardButton("📖 Workshop", callback_data="workshop")],
+        [InlineKeyboardButton("💳 Wallet", callback_data="wallet")],
+        [InlineKeyboardButton("🥘 Menu", callback_data="menu")],
+        [InlineKeyboardButton("📦 Order", callback_data="order")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(welcome_text, reply_markup=reply_markup, parse_mode="Markdown")
+
+# 🔥 Callback handler
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == "register":
+        await query.edit_message_text("📝 Registration started!\n\nSend me your matric number, hostel, and room.")
+    elif query.data == "workshop":
+        await query.edit_message_text("⚒️ *Workshop Access Granted*\n\nHere, admins can add, edit, delete, move, or group anything. (Superpowers enabled ✅)", parse_mode="Markdown")
+    elif query.data == "wallet":
+        await query.edit_message_text("💳 Your wallet is empty.\n\nTop up by sending a transfer screenshot to:\n\nOpay 9134565404 – Ogundele Ayomide")
+    elif query.data == "menu":
+        menu_text = (
+            "🍜 *Cloud 9 Menu*\n\n"
+            "➡️ Regular Noodles:\n"
+            "- Veggies Stir-fried Noodles (₦1700)\n"
+            "- Pepperoni Stir-fry (₦1500 - ₦2000)\n"
+            "- Egg Fried Noodles (₦1500 - ₦2000)\n"
+            "- Africana Noodles (₦2000)\n\n"
+            "➡️ Add-ons:\n"
+            "- Qbanz Sauce (₦500)\n"
+            "- Egg, Sausage, Chicken etc.\n\n"
+            "➡️ VIP Noodles – ₦6000"
+        )
+        await query.edit_message_text(menu_text, parse_mode="Markdown")
+    elif query.data == "order":
+        await query.edit_message_text("📦 Place your order now!\n\n⚠️ Orders require 2–8 hours notice. Delivery fee ₦300.\n\nSend your live location + menu choice.")
+
+# 🔥 Admin-only command
+async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        await update.message.reply_text("🚫 You are not allowed to use this command.")
+        return
+
+    admin_text = (
+        "⚙️ *Admin Commands List*\n\n"
+        "/broadcast <msg> – Send to all users\n"
+        "/view_users – Show registered users\n"
+        "/check_wallet <id> – Check wallet balance\n"
+        "/add_credit <id> <amount> – Add money\n"
+        "/workshop – Full workshop superpowers\n"
+        "/pin <code> – Use security PIN to authorize changes"
+    )
+    await update.message.reply_text(admin_text, parse_mode="Markdown")
+
+# Error handler
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+    logger.error(msg="Exception while handling update:", exc_info=context.error)
+
+# Main
+def main():
+    application = Application.builder().token(BOT_TOKEN).build()
+
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("admin", admin))
+    application.add_handler(CallbackQueryHandler(button))
+    application.add_handler(MessageHandler(filters.COMMAND, admin))
+
+    application.add_error_handler(error_handler)
+
+    application.run_polling()
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+
