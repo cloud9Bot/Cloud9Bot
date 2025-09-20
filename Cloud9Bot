@@ -1,0 +1,62 @@
+import os
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+
+# 🔑 Secrets (loaded from Railway environment variables)
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
+SECURITY_PIN = os.getenv("SECURITY_PIN", "1234")
+
+# Start command with welcome video + text
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+
+    # 🎥 Send placeholder welcome.mp4 (upload your real chef animation later)
+    try:
+        with open("welcome.mp4", "rb") as video:
+            await context.bot.send_video(chat_id=chat_id, video=video)
+    except FileNotFoundError:
+        await context.bot.send_message(chat_id=chat_id, text="(Welcome video coming soon…)")
+
+    # 📍 Welcome text + Register button
+    keyboard = [[InlineKeyboardButton("📲 Register", callback_data="register")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    welcome_text = (
+        "👋 Welcome to *Cloud 9 Noodles!*\n\n"
+        "Stand a chance to win ₦2000 coupon usable only on food 🍜 "
+        "when your reg number hits 300, 502, or 750.\n\n"
+        "Tap below to get started!"
+    )
+
+    await context.bot.send_message(chat_id=chat_id, text=welcome_text, reply_markup=reply_markup, parse_mode="Markdown")
+
+# Example admin command
+async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Access denied.")
+        return
+
+    commands = (
+        "🛠 *Admin Commands:*\n"
+        "/workshop – Manage system (add/remove/group)\n"
+        "/wallet – Manage student wallets\n"
+        "/promo – Handle coupons & VIP offers\n"
+        "/security – Change security PIN (Admin only)\n"
+    )
+    await update.message.reply_text(commands, parse_mode="Markdown")
+
+def main():
+    app = Application.builder().token(BOT_TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("admin", admin))
+
+    print("🤖 Cloud9 Bot is running forever on Railway...")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
+python-telegram-bot==20.3
+flask
+worker: python3 main.py
